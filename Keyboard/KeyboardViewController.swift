@@ -201,12 +201,22 @@ final class KeyboardViewController: UIInputViewController {
         suggestionsStack.addArrangedSubview(wrap)
     }
 
-    private func showSuggestions(_ replies: [String]) {
+    private func showSuggestions(_ result: RizzResult) {
         clearSuggestions()
-        for reply in replies {
+        if !result.stage.isEmpty {
+            let header = UILabel()
+            header.text = result.summary
+            header.font = .systemFont(ofSize: 12, weight: .semibold)
+            header.textColor = .secondaryLabel
+            header.numberOfLines = 2
+            suggestionsStack.addArrangedSubview(header)
+        }
+        for reply in result.replies {
             var cfg = UIButton.Configuration.gray()
-            cfg.title = reply
+            cfg.title = reply.text
+            cfg.subtitle = reply.angleLabel
             cfg.titleAlignment = .leading
+            cfg.titlePadding = 4
             cfg.cornerStyle = .large
             cfg.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12)
             cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
@@ -214,11 +224,18 @@ final class KeyboardViewController: UIInputViewController {
                 a.font = UIFont.systemFont(ofSize: 15)
                 return a
             }
+            cfg.subtitleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
+                var a = attrs
+                a.font = UIFont.systemFont(ofSize: 10, weight: .bold)
+                a.foregroundColor = UIColor.systemPink
+                return a
+            }
             let b = UIButton(configuration: cfg)
             b.contentHorizontalAlignment = .leading
             b.titleLabel?.numberOfLines = 0
             b.titleLabel?.lineBreakMode = .byWordWrapping
-            b.addAction(UIAction { [weak self] _ in self?.insert(reply) }, for: .touchUpInside)
+            let text = reply.text
+            b.addAction(UIAction { [weak self] _ in self?.insert(text) }, for: .touchUpInside)
             suggestionsStack.addArrangedSubview(b)
         }
         scrollView.setContentOffset(.zero, animated: false)
@@ -278,9 +295,9 @@ final class KeyboardViewController: UIInputViewController {
         let client = OllamaClient(settings: settings)
         currentTask = Task { @MainActor [weak self] in
             do {
-                let replies = try await client.suggestions(conversationText: text, imageJPEG: image, draft: draft)
+                let result = try await client.suggestions(conversationText: text, imageJPEG: image, draft: draft)
                 guard !Task.isCancelled else { return }
-                self?.showSuggestions(replies)
+                self?.showSuggestions(result)
             } catch {
                 guard !Task.isCancelled else { return }
                 let msg = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
