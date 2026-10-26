@@ -11,7 +11,7 @@ struct ContentView: View {
     @State private var testText = ""
     @State private var photoItem: PhotosPickerItem?
     @State private var testImage: UIImage?
-    @State private var results: [String] = []
+    @State private var result: RizzResult?
     @State private var testError = ""
     @State private var busy = false
 
@@ -58,7 +58,7 @@ struct ContentView: View {
                     Picker("Default vibe", selection: $settings.vibe) {
                         ForEach(Vibe.allCases, id: \.self) { Text($0.label).tag($0) }
                     }
-                    TextField("About you (optional): job, hobbies, humor…", text: $settings.aboutMe, axis: .vertical)
+                    TextField("About you: name, job, hobbies, what you’re into. Replies only use facts from here.", text: $settings.aboutMe, axis: .vertical)
                         .lineLimit(2...5)
                 }
 
@@ -102,12 +102,18 @@ struct ContentView: View {
                     if !testError.isEmpty {
                         Text(testError).font(.footnote).foregroundStyle(.red)
                     }
-                    ForEach(results, id: \.self) { reply in
+                    if let result, !result.stage.isEmpty {
+                        Text(result.summary).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    }
+                    ForEach(result?.replies ?? [], id: \.self) { reply in
                         HStack(alignment: .top) {
-                            Text(reply)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(reply.angleLabel).font(.caption2.weight(.bold)).foregroundStyle(.pink)
+                                Text(reply.text)
+                            }
                             Spacer()
                             Button {
-                                UIPasteboard.general.string = reply
+                                UIPasteboard.general.string = reply.text
                             } label: {
                                 Image(systemName: "doc.on.doc")
                             }
@@ -150,11 +156,11 @@ struct ContentView: View {
     private func runTest() async {
         busy = true
         testError = ""
-        results = []
+        result = nil
         SettingsStore.save(settings)
         let jpeg = testImage.flatMap { ImageTools.jpegForUpload($0) }
         do {
-            results = try await OllamaClient(settings: settings)
+            result = try await OllamaClient(settings: settings)
                 .suggestions(conversationText: testText, imageJPEG: jpeg, draft: nil)
         } catch {
             testError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
