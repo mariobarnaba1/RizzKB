@@ -1,0 +1,73 @@
+name: RizzKB
+options:
+  bundleIdPrefix: com.mariobarnaba
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  RizzKB:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+      - path: Resources/Assets.xcassets
+    scheme: {}
+    dependencies:
+      - target: RizzKeyboard
+    entitlements:
+      path: App/RizzKB.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mariobarnaba.rizzkb
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: RizzKB
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        NSPhotoLibraryUsageDescription: Pick a chat screenshot to test reply ideas.
+        NSLocalNetworkUsageDescription: RizzKB connects to the Ollama server running on your PC.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsLocalNetworking: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mariobarnaba.rizzkb
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  RizzKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Keyboard
+      - Shared
+    entitlements:
+      path: Keyboard/RizzKeyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mariobarnaba.rizzkb
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: RizzKB
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+          NSAllowsLocalNetworking: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeft: false
+            PrimaryLanguage: en-US
+            RequestsOpenAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mariobarnaba.rizzkb.keyboard
